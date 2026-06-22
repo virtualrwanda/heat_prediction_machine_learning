@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Heart Disease Predictor - About{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">About</li>
+            </ol>
+        </nav>
+        
+        <h1 class="mb-4">About This Project</h1>
+        <p class="lead text-muted mb-5">
+            Learn more about our heart disease prediction system, how it works, and its limitations.
+        </p>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">How It Works</h4>
+            </div>
+            <div class="card-body">
+                <p>
+                    This heart disease prediction system uses a machine learning model built with scikit-learn to analyze 
+                    heart rate and blood glucose data. The model processes these inputs to estimate the potential risk of 
+                    heart disease based on patterns it has learned from medical data.
+                </p>
+                <p>
+                    The system uses a neural network architecture that has been trained on synthetic data for demonstration 
+                    purposes. In a real-world application, the model would be trained on extensive clinical data from 
+                    patients with known heart disease outcomes.
+                </p>
+                <p>
+                    When you input your heart rate and blood glucose values, the system:
+                </p>
+                <ol>
+                    <li>Preprocesses your data by scaling it to a range the model can work with</li>
+                    <li>Passes the processed data through the neural network</li>
+                    <li>Obtains a probability score representing the estimated risk</li>
+                    <li>Categorizes the risk as Low, Moderate, or High based on the probability</li>
+                    <li>Presents the results with visualizations to help you understand the assessment</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Limitations</h4>
+            </div>
+            <div class="card-body">
+                <p>
+                    While our system provides a risk assessment based on heart rate and blood glucose, it's important to 
+                    understand that heart disease risk depends on many more factors, including:
+                </p>
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item">Age, gender, and family history</li>
+                    <li class="list-group-item">Blood pressure and cholesterol levels</li>
+                    <li class="list-group-item">Smoking status and alcohol consumption</li>
+                    <li class="list-group-item">Physical activity levels and diet</li>
+                    <li class="list-group-item">Presence of other conditions like diabetes</li>
+                </ul>
+                <div class="alert alert-warning">
+                    <strong>Important:</strong> This tool is for educational purposes only and should never replace professional medical advice or diagnosis.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">The Science</h4>
+            </div>
+            <div class="card-body">
+                <h5>Heart Rate</h5>
+                <p>
+                    Resting heart rate is an indicator of cardiovascular health. Studies have shown that elevated resting 
+                    heart rates may be associated with increased risk of cardiovascular events. A normal resting heart rate 
+                    for adults typically ranges from 60 to 100 beats per minute, with lower rates generally indicating better 
+                    cardiovascular fitness.
+                </p>
+                
+                <h5 class="mt-4">Blood Glucose</h5>
+                <p>
+                    Elevated blood glucose levels are associated with diabetes, which is a significant risk factor for heart 
+                    disease. Normal fasting blood glucose levels typically range from 70 to 100 mg/dL. Levels above 126 mg/dL 
+                    may indicate diabetes, while levels between 100 and 125 mg/dL suggest prediabetes.
+                </p>
+                
+                <p class="mt-4">
+                    While these two factors provide valuable information, comprehensive risk assessment requires evaluation 
+                    of multiple factors by healthcare professionals.
+                </p>
+            </div>
+        </div>
+        
+        <div class="card shadow">
+            <div class="card-header">
+                <h4 class="mb-0">Technical Implementation</h4>
+            </div>
+            <div class="card-body">
+                <p>
+                    This application is built using the following technologies:
+                </p>
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item">
+                        <strong>Flask:</strong> A lightweight Python web framework for serving the application
+                    </li>
+                    <li class="list-group-item">
+                        <strong>scikit-learn:</strong> A machine learning library for Python used to build and train the neural network model
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Bootstrap:</strong> A CSS framework for building responsive, mobile-first websites
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Chart.js:</strong> A JavaScript library for creating interactive data visualizations
+                    </li>
+                </ul>
+                <p>
+                    The model used in this application is a Multi-Layer Perceptron (MLP) neural network with two hidden layers. 
+                    It takes the heart rate and blood glucose values as input and outputs a probability representing the 
+                    estimated risk of heart disease.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patients — Clinical Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { font-family: 'Courier New', Courier, monospace; }</style>
+</head>
+<body class="min-h-screen bg-[#111827] text-white" style="text-transform:uppercase;letter-spacing:.03em">
+
+{% set active = 'patients' %}
+{% include '_nav.html' %}
+
+<div class="max-w-7xl mx-auto px-4 py-6">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+            <div class="mb-4 px-4 py-3 rounded border text-xs normal-case
+                {% if cat=='error' %}bg-red-900/40 border-red-700 text-red-300
+                {% elif cat=='warning' %}bg-yellow-900/40 border-yellow-700 text-yellow-300
+                {% else %}bg-green-900/40 border-green-700 text-green-300{% endif %}">{{ msg }}</div>
+        {% endfor %}{% endif %}
+    {% endwith %}
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold text-red-400 tracking-widest">Patients</h1>
+        {% if current_user.role in ('admin','doctor') %}
+        <a href="/patients/add"
+           class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded transition-colors shadow shadow-red-900/40">
+            + Add Patient
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Stats -->
+    {% set male   = patients | selectattr('gender','equalto','Male')   | list %}
+    {% set female = patients | selectattr('gender','equalto','Female') | list %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+        <div class="bg-gray-900 border border-red-800 rounded-lg px-4 py-3 text-center">
+            <div class="text-2xl font-bold text-red-400">{{ patients|length }}</div>
+            <div class="text-xs text-gray-500 mt-0.5">Total Patients</div>
+        </div>
+        <div class="bg-gray-900 border border-red-800 rounded-lg px-4 py-3 text-center">
+            <div class="text-2xl font-bold text-cyan-400">{{ male|length }}</div>
+            <div class="text-xs text-gray-500 mt-0.5">Male</div>
+        </div>
+        <div class="bg-gray-900 border border-red-800 rounded-lg px-4 py-3 text-center">
+            <div class="text-2xl font-bold text-pink-400">{{ female|length }}</div>
+            <div class="text-xs text-gray-500 mt-0.5">Female</div>
+        </div>
+    </div>
+
+    {% if patients %}
+    <!-- Patient cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for patient in patients %}
+        <div class="bg-gray-900 border border-red-800 rounded-lg overflow-hidden shadow-md shadow-red-950/30
+                    hover:border-red-600 hover:shadow-red-800/40 transition-all">
+            <!-- Card header -->
+            <div class="bg-red-900/40 px-4 py-3 flex items-center gap-3 border-b border-red-800">
+                <div class="w-9 h-9 rounded-full bg-red-700/60 flex items-center justify-center text-white font-bold flex-shrink-0">
+                    {{ patient.name[0]|upper }}
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-white truncate">{{ patient.name }}</p>
+                    <p class="text-xs text-gray-400 normal-case">
+                        {{ patient.age }} yrs &nbsp;·&nbsp;
+                        <span class="{% if patient.gender=='Male' %}text-cyan-400{% else %}text-pink-400{% endif %}">
+                            {{ patient.gender }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <!-- Body -->
+            <div class="px-4 py-3 text-xs">
+                {% if patient.medical_history %}
+                <p class="text-gray-400 normal-case truncate">{{ patient.medical_history }}</p>
+                {% else %}
+                <p class="text-gray-700 normal-case">No medical history recorded</p>
+                {% endif %}
+            </div>
+            <!-- Footer actions -->
+            <div class="px-4 pb-4 flex gap-2">
+                <a href="/patients/{{ patient.id }}"
+                   class="flex-1 text-center bg-red-700 hover:bg-red-600 text-white font-bold text-xs py-1.5 rounded transition-colors">
+                    View
+                </a>
+                {% if current_user.role in ('admin','doctor') %}
+                <a href="/patients/{{ patient.id }}/edit"
+                   class="flex-1 text-center bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-1.5 rounded transition-colors">
+                    Edit
+                </a>
+                {% endif %}
+                <a href="/patients/{{ patient.id }}/devices"
+                   class="flex-1 text-center bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-1.5 rounded transition-colors">
+                    Devices
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="bg-gray-900 border border-red-900/30 rounded-lg px-6 py-16 text-center">
+        <svg class="w-12 h-12 text-gray-700 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <p class="text-gray-500 text-sm normal-case">No patients registered yet.</p>
+        {% if current_user.role in ('admin','doctor') %}
+        <a href="/patients/add" class="inline-block mt-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-5 py-2 rounded transition-colors">
+            Add First Patient
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>

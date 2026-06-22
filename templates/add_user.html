@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add User — Clinical Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; }
+        .input-focus:focus {
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#111827] text-white" style="text-transform:uppercase;letter-spacing:.03em">
+
+    <!-- Navbar -->
+    <nav class="bg-red-700 shadow-lg shadow-red-900/50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="text-white font-bold text-lg tracking-widest flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                Clinical Dashboard
+            </a>
+            <div class="hidden md:flex items-center gap-6">
+                <a href="/" class="text-red-200 hover:text-white text-xs transition-colors">Dashboard</a>
+                <a href="/patients" class="text-red-200 hover:text-white text-xs transition-colors">Patients</a>
+                <a href="/caregivers" class="text-red-200 hover:text-white text-xs transition-colors">Caregivers</a>
+                <a href="/devices" class="text-red-200 hover:text-white text-xs transition-colors">IoT Devices</a>
+                <a href="/users" class="text-white text-xs font-bold border-b border-white pb-0.5">Users</a>
+                <span class="text-red-200 text-xs normal-case border-l border-red-600 pl-4 flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-red-900/60 flex items-center justify-center text-white font-bold text-xs">
+                        {{ current_user.full_name[0]|upper if current_user.full_name else '?' }}
+                    </span>
+                    {{ current_user.full_name }}
+                    <span class="px-1.5 py-0.5 rounded text-xs
+                        {% if current_user.role == 'admin' %}bg-amber-700/60 text-amber-200
+                        {% elif current_user.role == 'doctor' %}bg-cyan-800/60 text-cyan-200
+                        {% else %}bg-emerald-900/60 text-emerald-200{% endif %}">
+                        {{ current_user.role }}
+                    </span>
+                </span>
+                <a href="/logout" class="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-1.5 rounded transition-colors">Logout</a>
+            </div>
+            <button id="mob-btn" class="md:hidden text-white text-2xl">&#9776;</button>
+        </div>
+        <div id="mob-menu" class="hidden flex-col gap-3 px-4 pb-4 bg-red-800 md:hidden text-sm">
+            <a href="/" class="text-white">Dashboard</a>
+            <a href="/patients" class="text-white">Patients</a>
+            <a href="/caregivers" class="text-white">Caregivers</a>
+            <a href="/devices" class="text-white">IoT Devices</a>
+            <a href="/users" class="text-white">Users</a>
+            <a href="/logout" class="text-white">Logout</a>
+        </div>
+    </nav>
+
+    <div class="max-w-3xl mx-auto px-4 py-8">
+
+        <!-- Breadcrumb -->
+        <div class="text-xs text-gray-500 mb-4 normal-case">
+            <a href="/users" class="text-red-400 hover:text-red-300">Users</a>
+            <span class="mx-1">/</span>
+            <span>Add New User</span>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 px-4 py-3 rounded border text-xs normal-case
+                        {% if category == 'error' %}bg-red-900/40 border-red-700 text-red-300
+                        {% elif category == 'warning' %}bg-yellow-900/40 border-yellow-700 text-yellow-300
+                        {% else %}bg-green-900/40 border-green-700 text-green-300{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Main Form Card -->
+        <div class="bg-gray-900 border border-red-800 rounded-xl shadow-2xl shadow-red-950/30 overflow-hidden">
+            <div class="bg-red-700 px-6 py-4 flex items-center gap-3">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                </svg>
+                <h2 class="text-sm font-bold tracking-widest">Add New System User</h2>
+            </div>
+
+            <form action="/users/add" method="post" class="p-6 space-y-5">
+                <!-- Full Name -->
+                <div>
+                    <label for="full_name" class="block text-xs text-gray-400 mb-1">Full Name *</label>
+                    <input type="text" id="full_name" name="full_name" required
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="e.g., Dr. John Smith">
+                </div>
+
+                <!-- Username -->
+                <div>
+                    <label for="username" class="block text-xs text-gray-400 mb-1">Username *</label>
+                    <input type="text" id="username" name="username" required
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="e.g., jsmith">
+                    <p class="mt-1 text-xs text-gray-600 normal-case">Unique login identifier (letters, numbers, underscore)</p>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-xs text-gray-400 mb-1">Email Address *</label>
+                    <input type="email" id="email" name="email" required
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="user@hospital.com">
+                    <p class="mt-1 text-xs text-gray-600 normal-case">Used for notifications and password recovery</p>
+                </div>
+
+                <!-- Phone Number -->
+                <div>
+                    <label for="phone" class="block text-xs text-gray-400 mb-1">Phone Number</label>
+                    <input type="tel" id="phone" name="phone"
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="+250 788 123 456">
+                    <p class="mt-1 text-xs text-gray-600 normal-case">Required for SMS alerts. Include country code.</p>
+                </div>
+
+                <!-- Role Selection -->
+                <div>
+                    <label for="role" class="block text-xs text-gray-400 mb-1">User Role *</label>
+                    <select id="role" name="role" required
+                            class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                   focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors">
+                        <option value="">— Select Role —</option>
+                        <option value="caregiver">👨‍⚕️ Caregiver</option>
+                        <option value="doctor">👨‍⚕️ Doctor</option>
+                        <option value="admin">👑 Administrator</option>
+                    </select>
+                </div>
+
+                <!-- Role Description -->
+                <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                    <p class="text-xs font-bold text-gray-300 mb-2">Role Permissions:</p>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex items-start gap-2">
+                            <span class="text-amber-400">👑 Admin:</span>
+                            <span class="text-gray-400">Full system access - manage users, patients, devices, all settings</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-cyan-400">👨‍⚕️ Doctor:</span>
+                            <span class="text-gray-400">Manage patients, view readings, assign caregivers, access medical data</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-emerald-400">👩‍⚕️ Caregiver:</span>
+                            <span class="text-gray-400">View assigned patients, add readings, receive health alerts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-xs text-gray-400 mb-1">Password *</label>
+                    <input type="password" id="password" name="password" required minlength="6"
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="Minimum 6 characters">
+                    <div class="mt-2 flex gap-3 text-xs">
+                        <span class="text-gray-600" id="length-check">⚪ At least 6 chars</span>
+                        <span class="text-gray-600" id="number-check">⚪ Has number</span>
+                        <span class="text-gray-600" id="letter-check">⚪ Has letter</span>
+                    </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div>
+                    <label for="confirm_password" class="block text-xs text-gray-400 mb-1">Confirm Password *</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="Re-enter password">
+                    <p id="password-match" class="mt-1 text-xs"></p>
+                </div>
+
+                <!-- Active Status -->
+                <div class="flex items-center gap-3 pt-2">
+                    <input type="checkbox" id="is_active" name="is_active" value="1" checked
+                           class="w-4 h-4 rounded border-red-700 bg-gray-800 text-red-600 focus:ring-red-600">
+                    <label for="is_active" class="text-xs text-gray-300 cursor-pointer">
+                        Account Active (user can log in immediately)
+                    </label>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex gap-3 pt-4">
+                    <button type="submit"
+                            class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow shadow-red-900/40">
+                        Create User
+                    </button>
+                    <a href="/users"
+                       class="flex-1 text-center bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2.5 rounded-lg transition-colors">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Box -->
+        <div class="mt-6 bg-blue-900/20 border border-blue-800/30 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <p class="text-xs font-bold text-blue-400 mb-1">Important Notes:</p>
+                    <ul class="text-xs text-gray-400 space-y-1 list-disc list-inside">
+                        <li>Usernames must be unique across the system</li>
+                        <li>Users will receive email notifications if email is provided</li>
+                        <li>SMS alerts require a valid phone number with country code</li>
+                        <li>Admins have full system access - assign carefully</li>
+                        <li>Users can reset their password after first login</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        const mobBtn = document.getElementById('mob-btn');
+        if (mobBtn) {
+            mobBtn.addEventListener('click', () => {
+                const mobMenu = document.getElementById('mob-menu');
+                if (mobMenu) {
+                    mobMenu.classList.toggle('hidden');
+                    mobMenu.classList.toggle('flex');
+                }
+            });
+        }
+
+        // Password strength checker
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirm_password');
+        const lengthCheck = document.getElementById('length-check');
+        const numberCheck = document.getElementById('number-check');
+        const letterCheck = document.getElementById('letter-check');
+        const passwordMatch = document.getElementById('password-match');
+
+        function checkPasswordStrength() {
+            const password = passwordInput.value;
+            
+            // Length check
+            if (password.length >= 6) {
+                lengthCheck.innerHTML = '✅ At least 6 chars';
+                lengthCheck.classList.remove('text-gray-600');
+                lengthCheck.classList.add('text-green-400');
+            } else {
+                lengthCheck.innerHTML = '❌ At least 6 chars';
+                lengthCheck.classList.remove('text-green-400');
+                lengthCheck.classList.add('text-red-400');
+            }
+            
+            // Number check
+            if (/\d/.test(password)) {
+                numberCheck.innerHTML = '✅ Has number';
+                numberCheck.classList.remove('text-gray-600');
+                numberCheck.classList.add('text-green-400');
+            } else {
+                numberCheck.innerHTML = '❌ Has number';
+                numberCheck.classList.remove('text-green-400');
+                numberCheck.classList.add('text-red-400');
+            }
+            
+            // Letter check
+            if (/[a-zA-Z]/.test(password)) {
+                letterCheck.innerHTML = '✅ Has letter';
+                letterCheck.classList.remove('text-gray-600');
+                letterCheck.classList.add('text-green-400');
+            } else {
+                letterCheck.innerHTML = '❌ Has letter';
+                letterCheck.classList.remove('text-green-400');
+                letterCheck.classList.add('text-red-400');
+            }
+        }
+
+        function checkPasswordMatch() {
+            if (confirmInput.value.length > 0) {
+                if (passwordInput.value === confirmInput.value) {
+                    passwordMatch.innerHTML = '✅ Passwords match';
+                    passwordMatch.classList.remove('text-red-400');
+                    passwordMatch.classList.add('text-green-400');
+                } else {
+                    passwordMatch.innerHTML = '❌ Passwords do not match';
+                    passwordMatch.classList.remove('text-green-400');
+                    passwordMatch.classList.add('text-red-400');
+                }
+            } else {
+                passwordMatch.innerHTML = '';
+            }
+        }
+
+        passwordInput.addEventListener('input', checkPasswordStrength);
+        passwordInput.addEventListener('input', checkPasswordMatch);
+        confirmInput.addEventListener('input', checkPasswordMatch);
+
+        // Form validation before submit
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const password = passwordInput.value;
+            const confirm = confirmInput.value;
+            
+            if (password !== confirm) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return false;
+            }
+            
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Password must be at least 6 characters long!');
+                return false;
+            }
+            
+            return true;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'Edit User' if user else 'Add User' }} — Clinical Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { font-family: 'Courier New', Courier, monospace; }</style>
+</head>
+<body class="min-h-screen bg-[#111827] text-white" style="text-transform:uppercase;letter-spacing:.03em">
+
+    <!-- Navbar -->
+    <nav class="bg-red-700 shadow-lg shadow-red-900/50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="text-white font-bold text-lg tracking-widest">Clinical Dashboard</a>
+            <div class="hidden md:flex items-center gap-6">
+                <a href="/"      class="text-red-200 hover:text-white text-xs">Dashboard</a>
+                <a href="/users" class="text-white text-xs font-bold border-b border-white pb-0.5">Users</a>
+                <span class="text-red-200 text-xs normal-case">
+                    {{ current_user.full_name }}
+                    <span class="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-xs">{{ current_user.role }}</span>
+                </span>
+                <a href="/logout" class="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-1.5 rounded transition-colors">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-xl mx-auto px-4 py-8">
+
+        <!-- Breadcrumb -->
+        <div class="text-xs text-gray-500 mb-4 normal-case">
+            <a href="/users" class="text-red-400 hover:text-red-300">Users</a>
+            <span class="mx-1">/</span>
+            <span>{{ 'Edit User' if user else 'Add User' }}</span>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 px-4 py-3 rounded border text-xs normal-case
+                        {% if category == 'error' %}bg-red-900/40 border-red-700 text-red-300
+                        {% else %}bg-green-900/40 border-green-700 text-green-300{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Card -->
+        <div class="bg-gray-900 border border-red-800 rounded-xl shadow-2xl shadow-red-950/30 overflow-hidden">
+            <div class="bg-red-700 px-6 py-3">
+                <h2 class="text-sm font-bold tracking-widest">
+                    {{ 'Edit User — ' + user.username if user else 'Add New User' }}
+                </h2>
+            </div>
+
+            <form method="POST"
+                  action="{{ '/users/' + user.id|string + '/edit' if user else '/users/add' }}"
+                  class="p-6 space-y-4">
+
+                <!-- Full name -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Full Name</label>
+                    <input type="text" name="full_name" required
+                           value="{{ user.full_name if user else '' }}"
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="Dr. Jane Doe">
+                </div>
+
+                {% if not user %}
+                <!-- Username (only on create) -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Username</label>
+                    <input type="text" name="username" required
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="Unique username">
+                </div>
+                {% else %}
+                <!-- Username readonly on edit -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Username</label>
+                    <div class="w-full bg-gray-800/50 border border-gray-700 text-gray-400 rounded-lg px-4 py-2.5 text-sm normal-case">
+                        {{ user.username }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Email</label>
+                    <input type="email" name="email" required
+                           value="{{ user.email if user else '' }}"
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="user@hospital.com">
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">
+                        Phone Number
+                        <span class="text-gray-600 normal-case ml-1">(for SMS alerts)</span>
+                    </label>
+                    <input type="tel" name="phone"
+                           value="{{ user.phone if user and user.phone else '' }}"
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="+250 788 000 000">
+                </div>
+
+                <!-- Role -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Role</label>
+                    <select name="role" required
+                            class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                   focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors">
+                        <option value="caregiver" {% if user and user.role == 'caregiver' %}selected{% endif %}>Caregiver</option>
+                        <option value="doctor"    {% if user and user.role == 'doctor'    %}selected{% endif %}>Doctor</option>
+                        <option value="admin"     {% if user and user.role == 'admin'     %}selected{% endif %}>Admin</option>
+                    </select>
+                </div>
+
+                <!-- Active toggle -->
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" name="is_active" id="is_active" value="1"
+                           {% if not user or user.is_active %}checked{% endif %}
+                           class="w-4 h-4 rounded border-red-700 bg-gray-800 text-red-600 focus:ring-red-600">
+                    <label for="is_active" class="text-xs text-gray-300 cursor-pointer">Account Active</label>
+                </div>
+
+                <!-- Password section -->
+                <div class="border-t border-gray-800 pt-4">
+                    <p class="text-xs text-gray-500 mb-3 normal-case">
+                        {{ 'Set a password for this account (min 6 characters).' if not user
+                           else 'Leave blank to keep the current password.' }}
+                    </p>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">
+                                {{ 'Password' if not user else 'New Password' }}
+                            </label>
+                            <input type="password"
+                                   name="{{ 'password' if not user else 'new_password' }}"
+                                   {% if not user %}required{% endif %}
+                                   minlength="6"
+                                   class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                          focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                                   placeholder="{{ 'At least 6 characters' if not user else 'Leave blank to keep current' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-3 pt-2">
+                    <button type="submit"
+                            class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition-colors">
+                        {{ 'Save Changes' if user else 'Create User' }}
+                    </button>
+                    <a href="/users"
+                       class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2.5 rounded-lg transition-colors text-center">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

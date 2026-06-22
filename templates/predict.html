@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Heart Disease Predictor - Predict{% endblock %}
+
+{% block head %}
+<style>
+    .range-value {
+        font-weight: bold;
+    }
+    .info-icon {
+        cursor: pointer;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Predict</li>
+            </ol>
+        </nav>
+        
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Enter Your Health Data</h4>
+            </div>
+            <div class="card-body">
+                <p class="card-text mb-4">
+                    Provide your heart rate and blood glucose measurements for analysis. Move the sliders or enter values directly.
+                </p>
+                
+                <form action="/predict" method="post" id="prediction-form">
+                    <div class="mb-4">
+                        <label for="heart-rate" class="form-label d-flex justify-content-between">
+                            <span>
+                                Heart Rate (BPM)
+                                <span class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Normal resting heart rate for adults ranges from 60 to 100 beats per minute.">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle info-icon" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                    </svg>
+                                </span>
+                            </span>
+                            <span class="range-value" id="heart-rate-value">75 BPM</span>
+                        </label>
+                        <input type="range" class="form-range" id="heart-rate-slider" min="40" max="200" step="1" value="75">
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>40</span>
+                            <span>120</span>
+                            <span>200</span>
+                        </div>
+                        <div class="mt-2">
+                            <input type="number" class="form-control" id="heart-rate" name="heart_rate" value="75" min="40" max="200">
+                            <div class="form-text">Heart Rate (40-200 BPM)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="blood-glucose" class="form-label d-flex justify-content-between">
+                            <span>
+                                Blood Glucose (mg/dL)
+                                <span class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Normal fasting blood glucose level is between 70-100 mg/dL. Above 126 mg/dL may indicate diabetes.">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle info-icon" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                    </svg>
+                                </span>
+                            </span>
+                            <span class="range-value" id="blood-glucose-value">100 mg/dL</span>
+                        </label>
+                        <input type="range" class="form-range" id="blood-glucose-slider" min="70" max="300" step="1" value="100">
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>70</span>
+                            <span>185</span>
+                            <span>300</span>
+                        </div>
+                        <div class="mt-2">
+                            <input type="number" class="form-control" id="blood-glucose" name="blood_glucose" value="100" min="70" max="300">
+                            <div class="form-text">Blood Glucose (70-300 mg/dL)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">Analyze Risk</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer bg-light">
+                <div class="small text-muted">
+                    <strong>Note:</strong> This tool provides a simplified risk assessment based on limited data points and should not be used for medical diagnosis.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Heart rate slider
+        const heartRateSlider = document.getElementById('heart-rate-slider');
+        const heartRateInput = document.getElementById('heart-rate');
+        const heartRateValue = document.getElementById('heart-rate-value');
+        
+        heartRateSlider.addEventListener('input', function() {
+            heartRateInput.value = this.value;
+            heartRateValue.textContent = this.value + ' BPM';
+        });
+        
+        heartRateInput.addEventListener('input', function() {
+            if (this.value < 40) this.value = 40;
+            if (this.value > 200) this.value = 200;
+            heartRateSlider.value = this.value;
+            heartRateValue.textContent = this.value + ' BPM';
+        });
+        
+        // Blood glucose slider
+        const bloodGlucoseSlider = document.getElementById('blood-glucose-slider');
+        const bloodGlucoseInput = document.getElementById('blood-glucose');
+        const bloodGlucoseValue = document.getElementById('blood-glucose-value');
+        
+        bloodGlucoseSlider.addEventListener('input', function() {
+            bloodGlucoseInput.value = this.value;
+            bloodGlucoseValue.textContent = this.value + ' mg/dL';
+        });
+        
+        bloodGlucoseInput.addEventListener('input', function() {
+            if (this.value < 70) this.value = 70;
+            if (this.value > 300) this.value = 300;
+            bloodGlucoseSlider.value = this.value;
+            bloodGlucoseValue.textContent = this.value + ' mg/dL';
+        });
+    });
+</script>
+{% endblock %}

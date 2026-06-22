@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Dashboard - Heart Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); }
+        .danger-row { background-color: rgba(239,68,68,0.1); }
+        .warning-row { background-color: rgba(245,158,11,0.08); }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #1e1e2e; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .stat-card {
+            transition: transform 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-blue-900 to-cyan-800 shadow-xl shadow-blue-900/30">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="text-white font-bold text-lg tracking-widest flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                Clinical Dashboard
+            </a>
+            <div class="hidden md:flex items-center gap-6">
+                <a href="/" class="text-white text-xs font-bold border-b border-white pb-0.5">Dashboard</a>
+                <a href="/patients" class="text-blue-200 hover:text-white text-xs transition-colors">Patients</a>
+                {% if current_user.role == 'admin' %}
+                <a href="/caregivers" class="text-blue-200 hover:text-white text-xs transition-colors">Caregivers</a>
+                {% endif %}
+                <a href="/devices" class="text-blue-200 hover:text-white text-xs transition-colors">IoT Devices</a>
+                {% if current_user.role == 'admin' %}
+                <a href="/users" class="text-blue-200 hover:text-white text-xs transition-colors">Users</a>
+                {% endif %}
+                <span class="text-blue-200 text-xs normal-case border-l border-blue-600 pl-4 flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-700/60 flex items-center justify-center text-white font-bold text-xs">
+                        {{ current_user.full_name[0]|upper if current_user.full_name else '?' }}
+                    </span>
+                    {{ current_user.full_name }}
+                    <span class="px-1.5 py-0.5 rounded text-xs
+                        {% if current_user.role == 'admin' %}bg-amber-700/60 text-amber-200
+                        {% elif current_user.role == 'doctor' %}bg-cyan-800/60 text-cyan-200
+                        {% else %}bg-emerald-900/60 text-emerald-200{% endif %}">
+                        {{ current_user.role }}
+                    </span>
+                </span>
+                <a href="/logout" class="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-1.5 rounded transition-colors">Logout</a>
+            </div>
+            <button id="mob-btn" class="md:hidden text-white text-2xl">&#9776;</button>
+        </div>
+        <div id="mob-menu" class="hidden flex-col gap-3 px-4 pb-4 bg-blue-900 md:hidden text-sm">
+            <a href="/" class="text-white">Dashboard</a>
+            <a href="/patients" class="text-white">Patients</a>
+            <a href="/devices" class="text-white">IoT Devices</a>
+            {% if current_user.role == 'admin' %}
+            <a href="/caregivers" class="text-white">Caregivers</a>
+            <a href="/users" class="text-white">Users</a>
+            {% endif %}
+            <a href="/logout" class="text-white">Logout</a>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 px-4 py-3 rounded border text-xs normal-case
+                        {% if category == 'error' %}bg-red-900/40 border-red-700 text-red-300
+                        {% elif category == 'warning' %}bg-yellow-900/40 border-yellow-700 text-yellow-300
+                        {% else %}bg-green-900/40 border-green-700 text-green-300{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Welcome Header -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-white">Welcome, {{ current_user.full_name }}</h1>
+            <p class="text-xs text-blue-300 mt-1">Real-time patient monitoring dashboard</p>
+        </div>
+
+        <!-- TWO COLUMN GRID LAYOUT START -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- LEFT COLUMN -->
+            <div class="space-y-6">
+                
+                <!-- Stats Cards Row -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-800/80 backdrop-blur-sm border border-blue-500/30 rounded-lg px-4 py-3 stat-card shadow-lg">
+                        <div class="text-2xl font-bold text-blue-400">{{ patients|length }}</div>
+                        <div class="text-xs text-gray-400 mt-0.5">Total Patients</div>
+                    </div>
+                    <div class="bg-slate-800/80 backdrop-blur-sm border border-emerald-500/30 rounded-lg px-4 py-3 stat-card shadow-lg">
+                        <div class="text-2xl font-bold text-emerald-400">{{ readings|length }}</div>
+                        <div class="text-xs text-gray-400 mt-0.5">Recent Readings</div>
+                    </div>
+                    <div class="bg-slate-800/80 backdrop-blur-sm border border-amber-500/30 rounded-lg px-4 py-3 stat-card shadow-lg">
+                        <div class="text-2xl font-bold text-amber-400">
+                            {% set dangerous = readings|selectattr('notification_sent', 'equalto', true)|list %}
+                            {{ dangerous|length }}
+                        </div>
+                        <div class="text-xs text-gray-400 mt-0.5">Alerts Triggered</div>
+                    </div>
+                    <div class="bg-slate-800/80 backdrop-blur-sm border border-cyan-500/30 rounded-lg px-4 py-3 stat-card shadow-lg">
+                        <div class="text-2xl font-bold text-cyan-400">
+                            {% set high_risk = readings|selectattr('tachycardia_pred', 'equalto', 1)|list %}
+                            {{ high_risk|length }}
+                        </div>
+                        <div class="text-xs text-gray-400 mt-0.5">High Risk Cases</div>
+                    </div>
+                </div>
+
+                <!-- Add Reading Form -->
+                <div class="bg-slate-800/80 backdrop-blur-sm border border-blue-500/30 rounded-lg overflow-hidden shadow-xl">
+                    <div class="bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-3">
+                        <h2 class="text-sm font-bold tracking-widest">➕ Add New Reading</h2>
+                    </div>
+                    <form action="/add_reading" method="post" class="p-4">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Select Patient</label>
+                                <select name="patient_id" required
+                                        class="w-full bg-slate-700 border border-blue-500/30 text-white rounded-lg px-3 py-2 text-sm
+                                               focus:outline-none focus:border-blue-500 transition-colors">
+                                    <option value="">— Select Patient —</option>
+                                    {% for patient in patients %}
+                                    <option value="{{ patient.id }}" {% if selected_patient and selected_patient.id == patient.id %}selected{% endif %}>
+                                        {{ patient.name }} ({{ patient.age }} yrs)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Heart Rate (BPM)</label>
+                                <input type="number" name="heart_rate" required min="30" max="220"
+                                       class="w-full bg-slate-700 border border-blue-500/30 text-white rounded-lg px-3 py-2 text-sm
+                                              focus:outline-none focus:border-blue-500 transition-colors"
+                                       placeholder="60-100 normal">
+                            </div>
+                            <button type="submit"
+                                    class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-2 rounded-lg transition-all duration-200 shadow-lg">
+                                Analyze Reading
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="bg-slate-800/80 backdrop-blur-sm border border-blue-500/30 rounded-lg p-4 shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <label class="text-xs text-gray-400">🔍 Filter by Patient:</label>
+                        <select id="patientFilter" onchange="filterByPatient()"
+                                class="flex-1 bg-slate-700 border border-blue-500/30 text-white rounded-lg px-3 py-2 text-sm
+                                       focus:outline-none focus:border-blue-500 transition-colors">
+                            <option value="">All Patients</option>
+                            {% for patient in patients %}
+                            <option value="{{ patient.id }}" {% if selected_patient and selected_patient.id == patient.id %}selected{% endif %}>
+                                {{ patient.name }} ({{ patient.age }} yrs)
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button onclick="refreshData()"
+                                class="bg-slate-700 hover:bg-slate-600 text-gray-300 font-bold text-xs px-4 py-2 rounded transition-colors">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Selected Patient Info Card -->
+                {% if selected_patient %}
+                <div class="bg-gradient-to-r from-blue-900/50 to-cyan-800/30 border border-blue-500/30 rounded-lg p-4 shadow-xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                            {{ selected_patient.name[0]|upper }}
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">{{ selected_patient.name }}</h3>
+                            <p class="text-xs text-blue-300">
+                                Age: {{ selected_patient.age }} | Gender: {{ selected_patient.gender }}
+                            </p>
+                            {% if selected_patient.medical_history %}
+                            <p class="text-xs text-gray-400 mt-1 normal-case">📋 {{ selected_patient.medical_history[:60] }}{% if selected_patient.medical_history|length > 60 %}...{% endif %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Quick Tips -->
+                <div class="space-y-2">
+                    <div class="bg-emerald-900/20 backdrop-blur-sm border border-emerald-500/30 rounded-lg p-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+                            <span class="text-xs font-bold text-emerald-400">Normal Range</span>
+                        </div>
+                        <p class="text-xs text-gray-400">HR: 60-100 BPM | BP: &lt;120/80 | SpO2: ≥95% | Temp: 36.1-37.2°C</p>
+                    </div>
+                    <div class="bg-yellow-900/20 backdrop-blur-sm border border-yellow-500/30 rounded-lg p-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+                            <span class="text-xs font-bold text-yellow-400">Warning Range</span>
+                        </div>
+                        <p class="text-xs text-gray-400">HR: 100-120 or 50-60 | BP: 120-140/80-90 | SpO2: 92-94% | Temp: 37.3-38.0°C</p>
+                    </div>
+                    <div class="bg-red-900/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-2 h-2 rounded-full bg-red-400 pulse-animation"></div>
+                            <span class="text-xs font-bold text-red-400">Critical Range</span>
+                        </div>
+                        <p class="text-xs text-gray-400">HR: &gt;120 or &lt;50 | BP: &gt;140/90 | SpO2: &lt;92% | Temp: &gt;38.0°C</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN - Readings Table -->
+            <div class="bg-slate-800/80 backdrop-blur-sm border border-blue-500/30 rounded-lg overflow-hidden shadow-xl">
+                <div class="bg-gradient-to-r from-blue-900/60 to-cyan-900/60 px-4 py-3 border-b border-blue-500/30">
+                    <h2 class="text-sm font-bold text-white tracking-widest">
+                        📊 Recent Readings
+                        {% if selected_patient %}
+                        - {{ selected_patient.name }}
+                        {% else %}
+                        (All Patients)
+                        {% endif %}
+                    </h2>
+                    <p class="text-xs text-blue-300 mt-1">Last 20 readings</p>
+                </div>
+
+                {% if readings %}
+                <div class="overflow-x-auto" style="max-height: 600px; overflow-y: auto;">
+                    <table class="w-full text-xs">
+                        <thead class="sticky top-0 bg-slate-700">
+                            <tr class="text-gray-200">
+                                <th class="px-3 py-2 text-left">Time</th>
+                                <th class="px-3 py-2 text-left">Patient</th>
+                                <th class="px-3 py-2 text-center">HR</th>
+                                <th class="px-3 py-2 text-center">BP</th>
+                                <th class="px-3 py-2 text-center">SpO2</th>
+                                <th class="px-3 py-2 text-center">Temp</th>
+                                <th class="px-3 py-2 text-center">Tach</th>
+                                <th class="px-3 py-2 text-center">Hyp</th>
+                                <th class="px-3 py-2 text-center">Chol</th>
+                                <th class="px-3 py-2 text-center">Alert</th>
+                              </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700">
+                            {% for reading in readings %}
+                            {% set is_critical = reading.heart_rate > 120 or reading.heart_rate < 50 or reading.spo2 < 92 %}
+                            {% set is_warning = (reading.heart_rate > 100 and reading.heart_rate <= 120) or (reading.heart_rate < 60 and reading.heart_rate >= 50) or (reading.spo2 >= 92 and reading.spo2 < 95) %}
+                            <tr class="hover:bg-slate-700/50 transition-colors 
+                                {% if is_critical %}danger-row{% elif is_warning %}warning-row{% endif %}">
+                                <td class="px-3 py-2 text-gray-400 normal-case whitespace-nowrap">
+                                    {% if reading.timestamp %}
+                                        {% if reading.timestamp is string %}
+                                            {{ reading.timestamp[:16] }}
+                                        {% else %}
+                                            {{ reading.timestamp.strftime('%m-%d %H:%M') if reading.timestamp.strftime else reading.timestamp }}
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-gray-200 normal-case font-medium">
+                                    {% if reading.patient %}
+                                        {{ reading.patient.name[:15] }}{% if reading.patient.name|length > 15 %}...{% endif %}
+                                    {% elif reading.patient_name %}
+                                        {{ reading.patient_name[:15] }}
+                                    {% else %}
+                                        Pt #{{ reading.patient_id }}
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-center font-bold
+                                    {% if reading.heart_rate > 120 %}text-red-400
+                                    {% elif reading.heart_rate > 100 %}text-yellow-400
+                                    {% elif reading.heart_rate < 50 %}text-red-400
+                                    {% elif reading.heart_rate < 60 %}text-yellow-400
+                                    {% else %}text-emerald-400{% endif %}">
+                                    {{ reading.heart_rate }}
+                                </td>
+                                <td class="px-3 py-2 text-center
+                                    {% if reading.systolic > 160 or reading.diastolic > 100 %}text-red-400
+                                    {% elif reading.systolic > 140 or reading.diastolic > 90 %}text-yellow-400
+                                    {% else %}text-gray-300{% endif %}">
+                                    {{ reading.systolic }}/{{ reading.diastolic }}
+                                </td>
+                                <td class="px-3 py-2 text-center
+                                    {% if reading.spo2 < 92 %}text-red-400 font-bold
+                                    {% elif reading.spo2 < 95 %}text-yellow-400
+                                    {% else %}text-emerald-400{% endif %}">
+                                    {{ "%.0f"|format(reading.spo2) if reading.spo2 else '-' }}%
+                                </td>
+                                <td class="px-3 py-2 text-center
+                                    {% if reading.body_temp > 38.0 or reading.body_temp < 35.5 %}text-red-400
+                                    {% elif reading.body_temp > 37.5 or reading.body_temp < 36.0 %}text-yellow-400
+                                    {% else %}text-gray-400{% endif %}">
+                                    {{ "%.1f"|format(reading.body_temp) if reading.body_temp else '-' }}
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    {% if reading.tachycardia_pred == 1 %}
+                                        <span class="inline-block bg-red-600/80 text-white px-1.5 py-0.5 rounded text-xs">Yes</span>
+                                    {% else %}
+                                        <span class="text-gray-600">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    {% if reading.hypertrophy_pred == 1 %}
+                                        <span class="inline-block bg-red-600/80 text-white px-1.5 py-0.5 rounded text-xs">Yes</span>
+                                    {% else %}
+                                        <span class="text-gray-600">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    {% if reading.cholesterol_pred == 1 %}
+                                        <span class="inline-block bg-red-600/80 text-white px-1.5 py-0.5 rounded text-xs">Yes</span>
+                                    {% else %}
+                                        <span class="text-gray-600">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    {% if reading.notification_sent %}
+                                        <span class="inline-flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <span class="text-amber-400 text-xs">Sent</span>
+                                        </span>
+                                    {% else %}
+                                        <span class="text-gray-600">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="px-6 py-12 text-center">
+                    <svg class="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/>
+                    </svg>
+                    <p class="text-gray-500 text-sm normal-case">No readings available</p>
+                    <p class="text-xs text-gray-600 mt-2">Add a reading using the form on the left</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- TWO COLUMN GRID LAYOUT END -->
+        
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        const mobBtn = document.getElementById('mob-btn');
+        if (mobBtn) {
+            mobBtn.addEventListener('click', () => {
+                const mobMenu = document.getElementById('mob-menu');
+                if (mobMenu) {
+                    mobMenu.classList.toggle('hidden');
+                    mobMenu.classList.toggle('flex');
+                }
+            });
+        }
+
+        // Filter by patient
+        function filterByPatient() {
+            const select = document.getElementById('patientFilter');
+            const patientId = select.value;
+            if (patientId) {
+                window.location.href = '/?patient_id=' + patientId;
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        // Refresh data
+        function refreshData() {
+            const currentPatient = document.getElementById('patientFilter').value;
+            if (currentPatient) {
+                window.location.href = '/?patient_id=' + currentPatient;
+            } else {
+                window.location.href = '/'; `1
+            }
+        }
+    </script>
+</body>
+</html>

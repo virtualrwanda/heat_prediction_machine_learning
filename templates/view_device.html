@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ device.device_name }} — Clinical Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; }
+        .danger-row { background-color: rgba(239,68,68,0.15); }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen bg-[#111827] text-white" style="text-transform:uppercase;letter-spacing:.03em">
+
+    <!-- Navbar -->
+    <nav class="bg-red-700 shadow-lg shadow-red-900/50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="text-white font-bold text-lg tracking-widest">Clinical Dashboard</a>
+            <div class="hidden md:flex items-center gap-6">
+                <a href="/" class="text-red-200 hover:text-white text-xs transition-colors">Dashboard</a>
+                <a href="/patients" class="text-red-200 hover:text-white text-xs transition-colors">Patients</a>
+                {% if current_user.role == 'admin' %}
+                <a href="/caregivers" class="text-red-200 hover:text-white text-xs transition-colors">Caregivers</a>
+                {% endif %}
+                <a href="/devices" class="text-white text-xs font-bold border-b border-white pb-0.5">IoT Devices</a>
+                {% if current_user.role == 'admin' %}
+                <a href="/users" class="text-red-200 hover:text-white text-xs transition-colors">Users</a>
+                {% endif %}
+                <span class="text-red-200 text-xs normal-case border-l border-red-600 pl-4">
+                    {{ current_user.full_name }}
+                    <span class="ml-1 px-1.5 py-0.5 rounded text-xs
+                        {% if current_user.role == 'admin' %}bg-amber-700/60 text-amber-200
+                        {% elif current_user.role == 'doctor' %}bg-cyan-800/60 text-cyan-200
+                        {% else %}bg-emerald-900/60 text-emerald-200{% endif %}">
+                        {{ current_user.role }}
+                    </span>
+                </span>
+                <a href="/logout" class="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-1.5 rounded transition-colors">Logout</a>
+            </div>
+            <button id="mob-btn" class="md:hidden text-white text-xl">&#9776;</button>
+        </div>
+        <div id="mob-menu" class="hidden flex-col gap-3 px-4 pb-3 bg-red-800 md:hidden text-sm">
+            <a href="/" class="text-white">Dashboard</a>
+            <a href="/patients" class="text-white">Patients</a>
+            <a href="/devices" class="text-white">IoT Devices</a>
+            {% if current_user.role == 'admin' %}
+            <a href="/caregivers" class="text-white">Caregivers</a>
+            <a href="/users" class="text-white">Users</a>
+            {% endif %}
+            <a href="/logout" class="text-white">Logout</a>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- Breadcrumb -->
+        <div class="text-xs text-gray-500 mb-4 normal-case">
+            <a href="/devices" class="text-red-400 hover:text-red-300">IoT Devices</a>
+            <span class="mx-1">/</span>
+            <span class="text-gray-300">{{ device.device_name }}</span>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 px-4 py-3 rounded border text-xs normal-case
+                        {% if category == 'error' %}bg-red-900/40 border-red-700 text-red-300
+                        {% elif category == 'warning' %}bg-yellow-900/40 border-yellow-700 text-yellow-300
+                        {% else %}bg-green-900/40 border-green-700 text-green-300{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Page header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-red-700/60 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-red-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-red-400 tracking-widest">{{ device.device_name }}</h1>
+                    <p class="text-xs text-gray-500 normal-case">{{ device.device_id }}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                {% if device.status == 'active' %}
+                    <span class="inline-flex items-center gap-1.5 bg-emerald-900/60 text-emerald-300 px-3 py-1.5 rounded-full text-xs font-bold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>Active
+                    </span>
+                {% elif device.status == 'inactive' %}
+                    <span class="inline-block bg-gray-800 text-gray-400 px-3 py-1.5 rounded-full text-xs font-bold">Inactive</span>
+                {% else %}
+                    <span class="inline-block bg-amber-900/60 text-amber-300 px-3 py-1.5 rounded-full text-xs font-bold">{{ device.status }}</span>
+                {% endif %}
+                <a href="/devices"
+                   class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold px-4 py-1.5 rounded transition-colors">
+                    ← All Devices
+                </a>
+            </div>
+        </div>
+
+        <!-- Top row: info + API key -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+
+            <!-- Device Info -->
+            <div class="bg-gray-900 border border-red-800 rounded-lg overflow-hidden shadow-md shadow-red-950/30">
+                <div class="bg-red-700 px-4 py-2">
+                    <span class="text-xs font-bold tracking-widest">Device Information</span>
+                </div>
+                <div class="p-5 space-y-3 text-xs">
+                    <div class="flex justify-between border-b border-gray-800 pb-2">
+                        <span class="text-gray-500">Device ID</span>
+                        <span class="text-gray-200 font-mono normal-case">{{ device.device_id }}</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-800 pb-2">
+                        <span class="text-gray-500">Type</span>
+                        <span class="text-gray-200 normal-case">{{ device.device_type }}</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-800 pb-2">
+                        <span class="text-gray-500">Status</span>
+                        {% if device.status == 'active' %}
+                            <span class="text-emerald-400 font-bold">Active</span>
+                        {% elif device.status == 'inactive' %}
+                            <span class="text-gray-400">Inactive</span>
+                        {% else %}
+                            <span class="text-amber-400">{{ device.status }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-between border-b border-gray-800 pb-2">
+                        <span class="text-gray-500">Assigned Patient</span>
+                        {% if device.patient_id %}
+                            <a href="/patients/{{ device.patient_id }}" class="text-red-400 hover:text-red-300 transition-colors normal-case">
+                                View Patient →
+                            </a>
+                        {% else %}
+                            <span class="text-gray-600">— Unassigned —</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-between border-b border-gray-800 pb-2">
+                        <span class="text-gray-500">Last Seen</span>
+                        <span class="text-gray-400 normal-case">
+                            {% if device.last_seen %}
+                                {% if device.last_seen is string %}
+                                    {{ device.last_seen }}
+                                {% else %}
+                                    {{ device.last_seen.strftime('%Y-%m-%d %H:%M:%S') if device.last_seen.strftime else device.last_seen }}
+                                {% endif %}
+                            {% else %}
+                                — Never —
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Created</span>
+                        <span class="text-gray-400 normal-case">
+                            {% if device.created_at %}
+                                {% if device.created_at is string %}
+                                    {{ device.created_at[:10] }}
+                                {% else %}
+                                    {{ device.created_at.strftime('%Y-%m-%d') if device.created_at.strftime else device.created_at }}
+                                {% endif %}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Key -->
+            <div class="bg-gray-900 border border-red-800 rounded-lg overflow-hidden shadow-md shadow-red-950/30">
+                <div class="bg-red-700 px-4 py-2 flex justify-between items-center">
+                    <span class="text-xs font-bold tracking-widest">API Key</span>
+                    {% if current_user.role == 'admin' %}
+                    <form method="POST" action="/devices/{{ device.device_id }}/regenerate_key"
+                          onsubmit="return confirm('Regenerate API key? The old key will stop working immediately.')">
+                        <button type="submit"
+                                class="text-xs bg-amber-700/60 hover:bg-amber-600/60 text-amber-200 px-2.5 py-1 rounded transition-colors">
+                            Regenerate
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                <div class="p-5 space-y-4">
+                    <p class="text-xs text-gray-500 normal-case">Use this key to authenticate requests from your IoT device.</p>
+
+                    <!-- Key display -->
+                    <div class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+                        <code id="api-key-text" class="text-emerald-300 text-xs normal-case break-all font-mono">{{ device.api_key }}</code>
+                        <button onclick="copyKey()" title="Copy"
+                                class="flex-shrink-0 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded transition-colors">
+                            Copy
+                        </button>
+                    </div>
+
+                    <!-- Example request -->
+                    <div>
+                        <p class="text-xs text-gray-500 mb-2">Example POST request:</p>
+                        <pre class="bg-gray-800 border border-gray-700 rounded-lg p-3 text-xs text-emerald-300 normal-case overflow-x-auto leading-relaxed font-mono"><code>POST /api/reading
+Content-Type: application/json
+
+{
+  "device_id": "{{ device.device_id }}",
+  "api_key": "{{ device.api_key }}",
+  "heart_rate": 75
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Device (admin only) -->
+        {% if current_user.role in ('admin', 'doctor') %}
+        <div class="bg-gray-900 border border-red-800 rounded-lg overflow-hidden shadow-md shadow-red-950/30 mb-6">
+            <button onclick="document.getElementById('edit-panel').classList.toggle('hidden')"
+                    class="w-full bg-red-900/30 hover:bg-red-900/50 px-4 py-3 flex items-center justify-between transition-colors">
+                <span class="text-xs font-bold tracking-widest">Edit Device</span>
+                <svg id="edit-chevron" class="w-4 h-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div id="edit-panel" class="hidden p-5 border-t border-red-900/40">
+                <form method="POST" action="/devices/{{ device.device_id }}/edit" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Device Name</label>
+                            <input type="text" name="device_name" required value="{{ device.device_name }}"
+                                   class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-3 py-2 text-sm normal-case
+                                          focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Device Type</label>
+                            <select name="device_type" required
+                                    class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-3 py-2 text-sm normal-case
+                                           focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors">
+                                {% for t in ['Heart Monitor','Blood Pressure Monitor','Pulse Oximeter','Multi-parameter Monitor','Wearable','Other'] %}
+                                <option value="{{ t }}" {% if device.device_type == t %}selected{% endif %}>{{ t }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Assign to Patient</label>
+                            <select name="patient_id"
+                                    class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-3 py-2 text-sm normal-case
+                                           focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors">
+                                <option value="">— No Patient —</option>
+                                {% for patient in patients %}
+                                <option value="{{ patient.id }}" {% if device.patient_id == patient.id %}selected{% endif %}>
+                                    {{ patient.name }} ({{ patient.age }}y)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Status</label>
+                            <select name="status" required
+                                    class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-3 py-2 text-sm normal-case
+                                           focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors">
+                                <option value="active"      {% if device.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive"    {% if device.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                                <option value="maintenance" {% if device.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-1">
+                        <button type="submit"
+                                class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-5 py-2 rounded transition-colors">
+                            Save Changes
+                        </button>
+                        <button type="button"
+                                onclick="document.getElementById('edit-panel').classList.add('hidden')"
+                                class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs px-5 py-2 rounded transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Readings -->
+        <h2 class="text-sm font-bold text-red-400 tracking-widest mb-3 border-b border-red-900 pb-1">
+            Recent Readings from This Device
+        </h2>
+
+        {% if readings and readings|length > 0 %}
+        <div class="bg-gray-900 border border-red-800 rounded-lg overflow-hidden shadow-md shadow-red-950/30">
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-red-700 text-white">
+                            <th class="px-3 py-2 text-left">Time</th>
+                            <th class="px-3 py-2 text-left">Patient</th>
+                            <th class="px-3 py-2 text-center">HR (BPM)</th>
+                            <th class="px-3 py-2 text-center">BP</th>
+                            <th class="px-3 py-2 text-center">SpO2</th>
+                            <th class="px-3 py-2 text-center">Temp</th>
+                            <th class="px-3 py-2 text-center">Tachycardia</th>
+                            <th class="px-3 py-2 text-center">Hypertrophy</th>
+                            <th class="px-3 py-2 text-center">Cholesterol</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                        {% for reading in readings %}
+                            {% set danger = reading.tachycardia_pred == 1 or reading.hypertrophy_pred == 1 or reading.cholesterol_pred == 1
+                                            or reading.heart_rate > 120 or reading.systolic > 160 or reading.diastolic > 100 or reading.spo2 < 92 %}
+                            <tr class="hover:bg-gray-800 transition-colors {% if danger %}danger-row{% endif %}">
+                                <td class="px-3 py-2 text-gray-400 normal-case">
+                                    {% if reading.timestamp %}
+                                        {% if reading.timestamp is string %}
+                                            {{ reading.timestamp[:16] }}
+                                        {% else %}
+                                            {{ reading.timestamp.strftime('%Y-%m-%d %H:%M:%S') if reading.timestamp.strftime else reading.timestamp }}
+                                        {% endif %}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-gray-200 normal-case">
+                                    {% if reading.patient %}
+                                        {{ reading.patient.name }}
+                                    {% elif reading.patient_name %}
+                                        {{ reading.patient_name }}
+                                    {% else %}
+                                        Patient #{{ reading.patient_id }}
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-center font-bold {% if reading.heart_rate > 120 %}text-red-400{% elif reading.heart_rate > 100 %}text-yellow-400{% else %}text-emerald-400{% endif %}">
+                                    {{ reading.heart_rate }}
+                                </td>
+                                <td class="px-3 py-2 text-center {% if reading.systolic > 160 or reading.diastolic > 100 %}text-red-400 font-bold{% else %}text-gray-300{% endif %}">
+                                    {{ reading.systolic }}/{{ reading.diastolic }}
+                                </td>
+                                <td class="px-3 py-2 text-center {% if reading.spo2 < 92 %}text-red-400 font-bold{% elif reading.spo2 < 95 %}text-yellow-400{% else %}text-gray-300{% endif %}">
+                                    {{ reading.spo2 }}%
+                                </td>
+                                <td class="px-3 py-2 text-center text-gray-400">
+                                    {{ "%.1f"|format(reading.body_temp) if reading.body_temp else '-' }}°C
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    {% if reading.tachycardia_pred == 1 %}
+                                        <span class="inline-block bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Yes</span>
+                                    {% else %}
+                                        <span class="inline-block bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded-full">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    {% if reading.hypertrophy_pred == 1 %}
+                                        <span class="inline-block bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Yes</span>
+                                    {% else %}
+                                        <span class="inline-block bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded-full">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    {% if reading.cholesterol_pred == 1 %}
+                                        <span class="inline-block bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Yes</span>
+                                    {% else %}
+                                        <span class="inline-block bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded-full">No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-gray-900 border border-red-900/30 rounded-lg px-6 py-10 text-center">
+            <p class="text-gray-600 text-sm normal-case">No readings received from this device yet.</p>
+            <p class="text-xs text-gray-700 mt-2">Send a POST request to /api/reading to add readings</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.getElementById('mob-btn').addEventListener('click', () => {
+            const m = document.getElementById('mob-menu');
+            m.classList.toggle('hidden');
+            m.classList.toggle('flex');
+        });
+
+        function copyKey() {
+            const key = document.getElementById('api-key-text').textContent;
+            navigator.clipboard.writeText(key).then(() => {
+                const btn = event.target;
+                const orig = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('text-emerald-400');
+                setTimeout(() => { btn.textContent = orig; btn.classList.remove('text-emerald-400'); }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>

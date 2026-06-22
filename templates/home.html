@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Heart Monitor System - Home{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <!-- Hero Section -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold text-white mb-3">
+                ❤️ Smart Heart Monitoring System
+            </h1>
+            <p class="lead text-white-50 mb-4">
+                Real-time cardiac monitoring with AI-powered predictions and instant caregiver alerts
+            </p>
+            {% if not current_user.is_authenticated %}
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                <a href="{{ url_for('login') }}" class="btn btn-danger btn-lg px-4 gap-3">
+                    🔐 Login to Dashboard
+                </a>
+                <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg px-4">
+                    📝 Register New Account
+                </a>
+            </div>
+            {% else %}
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                <a href="{{ url_for('index') }}" class="btn btn-danger btn-lg px-4 gap-3">
+                    📊 Go to Dashboard
+                </a>
+                <a href="{{ url_for('list_patients') }}" class="btn btn-outline-light btn-lg px-4">
+                    👥 Manage Patients
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Features Section -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="display-1 text-danger mb-3">📊</div>
+                        <h3 class="card-title">AI Predictions</h3>
+                        <p class="card-text">
+                            Machine learning models predict tachycardia, cardiac hypertrophy, 
+                            and high cholesterol risk based on heart rate data.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="display-1 text-danger mb-3">📱</div>
+                        <h3 class="card-title">IoT Integration</h3>
+                        <p class="card-text">
+                            Connect IoT heart monitors to automatically send readings 
+                            and receive real-time health predictions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="display-1 text-danger mb-3">📧</div>
+                        <h3 class="card-title">Instant Alerts</h3>
+                        <p class="card-text">
+                            Automatic email notifications to caregivers when dangerous 
+                            health conditions are detected.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">🔄 How It Works</h4>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <span class="h3 mb-0">1</span>
+                        </div>
+                        <h5>Input Heart Rate</h5>
+                        <small class="text-muted">Enter heart rate manually or via IoT device</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <span class="h3 mb-0">2</span>
+                        </div>
+                        <h5>AI Analysis</h5>
+                        <small class="text-muted">Our ML models analyze the data</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <span class="h3 mb-0">3</span>
+                        </div>
+                        <h5>Risk Assessment</h5>
+                        <small class="text-muted">Instant predictions & risk levels</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <span class="h3 mb-0">4</span>
+                        </div>
+                        <h5>Caregiver Alerts</h5>
+                        <small class="text-muted">Automatic notifications if critical</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card text-center bg-danger bg-opacity-25 border-danger">
+                    <div class="card-body">
+                        <div class="display-4 fw-bold text-white">3</div>
+                        <div class="text-white-50">ML Models</div>
+                        <small class="text-white-50">Tachycardia, Hypertrophy, Cholesterol</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center bg-danger bg-opacity-25 border-danger">
+                    <div class="card-body">
+                        <div class="display-4 fw-bold text-white">Real-time</div>
+                        <div class="text-white-50">Monitoring</div>
+                        <small class="text-white-50">Instant predictions and alerts</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center bg-danger bg-opacity-25 border-danger">
+                    <div class="card-body">
+                        <div class="display-4 fw-bold text-white">24/7</div>
+                        <div class="text-white-50">Patient Tracking</div>
+                        <small class="text-white-50">Continuous health monitoring</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="card shadow mb-4 bg-gradient text-center">
+            <div class="card-body py-5">
+                <h3 class="mb-3">Ready to Monitor Heart Health?</h3>
+                <p class="mb-4">
+                    Join healthcare providers using our AI-powered heart monitoring system
+                </p>
+                {% if not current_user.is_authenticated %}
+                <a href="{{ url_for('register') }}" class="btn btn-danger btn-lg">
+                    Get Started Free
+                </a>
+                {% else %}
+                <a href="{{ url_for('index') }}" class="btn btn-danger btn-lg">
+                    Access Dashboard
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Demo Credentials (for testing) -->
+        {% if not current_user.is_authenticated %}
+        <div class="alert alert-secondary alert-dismissible fade show" role="alert">
+            <strong>Demo Credentials:</strong><br>
+            <small>Admin: admin / admin123</small><br>
+            <small>Doctor: doctor / doctor123</small><br>
+            <small>Caregiver: caregiver / caregiver123</small>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

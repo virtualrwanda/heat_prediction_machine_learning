@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Patient — Clinical Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { font-family: 'Courier New', Courier, monospace; }</style>
+</head>
+<body class="min-h-screen bg-[#111827] text-white" style="text-transform:uppercase;letter-spacing:.03em">
+
+{% set active = 'patients' %}
+{% include '_nav.html' %}
+
+<div class="max-w-xl mx-auto px-4 py-8">
+
+    <!-- Breadcrumb -->
+    <div class="text-xs text-gray-500 mb-4 normal-case">
+        <a href="/patients" class="text-red-400 hover:text-red-300">Patients</a>
+        <span class="mx-1">/</span>
+        <span>Add New Patient</span>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+            <div class="mb-4 px-4 py-3 rounded border text-xs normal-case
+                {% if cat=='error' %}bg-red-900/40 border-red-700 text-red-300
+                {% elif cat=='warning' %}bg-yellow-900/40 border-yellow-700 text-yellow-300
+                {% else %}bg-green-900/40 border-green-700 text-green-300{% endif %}">{{ msg }}</div>
+        {% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="bg-gray-900 border border-red-800 rounded-xl shadow-2xl shadow-red-950/30 overflow-hidden">
+        <div class="bg-red-700 px-6 py-3 flex items-center gap-3">
+            <svg class="w-4 h-4 text-red-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            <h2 class="text-sm font-bold tracking-widest">Add New Patient</h2>
+        </div>
+
+        <form action="/patients/add" method="post" class="p-6 space-y-5">
+            <div>
+                <label for="name" class="block text-xs text-gray-400 mb-1">Full Name</label>
+                <input type="text" id="name" name="name" required
+                       class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                              focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                       placeholder="Patient's full name">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="age" class="block text-xs text-gray-400 mb-1">Age</label>
+                    <input type="number" id="age" name="age" min="0" max="120" required
+                           class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                  focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors"
+                           placeholder="Years">
+                </div>
+                <div>
+                    <label for="gender" class="block text-xs text-gray-400 mb-1">Gender</label>
+                    <select id="gender" name="gender" required
+                            class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                   focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors">
+                        <option value="">— Select —</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label for="medical_history" class="block text-xs text-gray-400 mb-1">Medical History</label>
+                <textarea id="medical_history" name="medical_history" rows="4"
+                          class="w-full bg-gray-800 border border-red-800 text-white rounded-lg px-4 py-2.5 text-sm normal-case
+                                 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-600 transition-colors resize-none"
+                          placeholder="Relevant conditions, medications, prior diagnoses..."></textarea>
+            </div>
+            <div class="flex gap-3 pt-1">
+                <button type="submit"
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow shadow-red-900/40">
+                    Add Patient
+                </button>
+                <a href="/patients"
+                   class="flex-1 text-center bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2.5 rounded-lg transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

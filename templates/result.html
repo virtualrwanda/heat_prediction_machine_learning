@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Heart Disease Predictor - Results{% endblock %}
+
+{% block content %}
+<div class="flex justify-center my-8">
+    <div class="w-full max-w-4xl bg-white rounded-lg shadow-md">
+        <!-- Breadcrumb -->
+        <nav class="text-gray-600 text-sm p-4">
+            <ol class="flex space-x-2">
+                <li><a href="/" class="hover:underline text-blue-500">Home</a></li>
+                <li>/</li>
+                <li><a href="/predict" class="hover:underline text-blue-500">Predict</a></li>
+                <li>/</li>
+                <li class="text-gray-800 font-semibold">Results</li>
+            </ol>
+        </nav>
+
+        <!-- Results Card -->
+        <div class="bg-blue-500 text-white rounded-t-lg px-6 py-4">
+            <h2 class="text-lg font-semibold">Risk Assessment Results</h2>
+        </div>
+        <div class="px-6 py-6">
+            <div class="text-center">
+                <h3 class="text-lg font-bold">Your Heart Disease Risk Level</h3>
+                <span class="mt-4 inline-block bg-{{ risk_class }} text-white py-2 px-4 rounded-full text-sm">
+                    {{ risk_level }} Risk
+                </span>
+                <!-- Progress Bar -->
+                <div class="mt-6">
+                    <div class="bg-gray-200 rounded-full h-6 w-full">
+                        <div class="bg-{{ risk_class }} h-6 rounded-full text-xs text-center text-white flex items-center justify-center" style="width: {{ prediction * 100 }}%;">
+                            {{ (prediction * 100) | round(1) }}%
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-600 mt-2">
+                        <span>Low Risk</span>
+                        <span>Moderate Risk</span>
+                        <span>High Risk</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Data & Analysis -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-4">
+            <div>
+                <h4 class="font-semibold text-lg mb-4">Your Input Data</h4>
+                <table class="w-full text-sm">
+                    <tbody>
+                        <tr class="border-b">
+                            <th class="text-gray-500 py-2 pr-4">Heart Rate:</th>
+                            <td class="py-2">{{ heart_rate }} BPM</td>
+                        </tr>
+                        <tr>
+                            <th class="text-gray-500 py-2 pr-4">Blood Glucose:</th>
+                            <td class="py-2">{{ blood_glucose }} mg/dL</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h4 class="font-semibold text-lg mb-4">Risk Analysis</h4>
+                <table class="w-full text-sm">
+                    <tbody>
+                        <tr class="border-b">
+                            <th class="text-gray-500 py-2 pr-4">Risk Score:</th>
+                            <td class="py-2">{{ (prediction * 100) | round(1) }}%</td>
+                        </tr>
+                        <tr>
+                            <th class="text-gray-500 py-2 pr-4">Risk Level:</th>
+                            <td class="py-2">
+                                <span class="bg-{{ risk_class }} text-white py-1 px-3 rounded-full">{{ risk_level }}</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="px-6 py-4">
+            <h4 class="font-semibold text-lg mb-4">Risk Visualization</h4>
+            <canvas id="riskChart" class="w-full"></canvas>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="flex justify-between bg-gray-50 px-6 py-4 rounded-b-lg">
+            <a href="/predict" class="px-4 py-2 border border-blue-500 text-blue-500 rounded hover:bg-blue-500 hover:text-white">Make Another Prediction</a>
+            <a href="/about" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-200">Learn More About Risk Factors</a>
+        </div>
+    </div>
+</div>
+
+<!-- Disclaimer -->
+<div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 mt-6 max-w-4xl mx-auto rounded-lg">
+    <h5 class="font-bold text-lg">Important Disclaimer</h5>
+    <p class="mt-2 text-sm">This tool provides a simplified risk assessment based on limited data points and should not be used for medical diagnosis. The machine learning model used here is for demonstration purposes only and has not been clinically validated. Always consult with healthcare professionals for proper medical advice and diagnosis.</p>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('riskChart').getContext('2d');
+        const riskChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Your Data Point',
+                    data: [{
+                        x: {{ heart_rate }},
+                        y: {{ blood_glucose }}
+                    }],
+                    backgroundColor: 'rgba(255, 99, 132, 1)',
+                    pointRadius: 8
+                }, {
+                    label: 'Low Risk Zone',
+                    data: Array.from({length: 20}, (_, i) => ({
+                        x: 60 + Math.random() * 20,
+                        y: 70 + Math.random() * 30
+                    })),
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    pointRadius: 4
+                }, {
+                    label: 'High Risk Zone',
+                    data: Array.from({length: 20}, (_, i) => ({
+                        x: 90 + Math.random() * 30,
+                        y: 140 + Math.random() * 60
+                    })),
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Heart Rate (BPM)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Blood Glucose (mg/dL)'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

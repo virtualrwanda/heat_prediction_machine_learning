@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Devices — Clinical Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { font-family: 'Courier New', Courier, monospace; }</style>
+</head>
+<body class="min-h-screen bg-[#111827] text-white" style="text-transform:uppercase;letter-spacing:.03em">
+
+    <!-- Navbar -->
+    <nav class="bg-red-700 shadow-lg shadow-red-900/50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="text-white font-bold text-lg tracking-widest">Clinical Dashboard</a>
+            <div class="hidden md:flex items-center gap-6">
+                <a href="/"           class="text-red-200 hover:text-white text-xs transition-colors">Dashboard</a>
+                <a href="/patients"   class="text-red-200 hover:text-white text-xs transition-colors">Patients</a>
+                {% if current_user.role == 'admin' %}
+                <a href="/caregivers" class="text-red-200 hover:text-white text-xs transition-colors">Caregivers</a>
+                {% endif %}
+                <a href="/devices"    class="text-white text-xs font-bold border-b border-white pb-0.5">IoT Devices</a>
+                {% if current_user.role == 'admin' %}
+                <a href="/users"      class="text-red-200 hover:text-white text-xs transition-colors">Users</a>
+                {% endif %}
+                <span class="text-red-200 text-xs normal-case border-l border-red-600 pl-4">
+                    {{ current_user.full_name }}
+                    <span class="ml-1 px-1.5 py-0.5 rounded text-xs
+                        {% if current_user.role == 'admin' %}bg-amber-700/60 text-amber-200
+                        {% elif current_user.role == 'doctor' %}bg-cyan-800/60 text-cyan-200
+                        {% else %}bg-emerald-900/60 text-emerald-200{% endif %}">
+                        {{ current_user.role }}
+                    </span>
+                </span>
+                <a href="/logout" class="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-1.5 rounded transition-colors">Logout</a>
+            </div>
+            <button id="mob-btn" class="md:hidden text-white text-xl">&#9776;</button>
+        </div>
+        <div id="mob-menu" class="hidden flex-col gap-3 px-4 pb-3 bg-red-800 md:hidden text-sm">
+            <a href="/" class="text-white">Dashboard</a>
+            <a href="/patients" class="text-white">Patients</a>
+            <a href="/devices" class="text-white">IoT Devices</a>
+            {% if current_user.role == 'admin' %}
+            <a href="/caregivers" class="text-white">Caregivers</a>
+            <a href="/users" class="text-white">Users</a>
+            {% endif %}
+            <a href="/logout" class="text-white">Logout</a>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 px-4 py-3 rounded border text-xs normal-case
+                        {% if category == 'error' %}bg-red-900/40 border-red-700 text-red-300
+                        {% elif category == 'warning' %}bg-yellow-900/40 border-yellow-700 text-yellow-300
+                        {% else %}bg-green-900/40 border-green-700 text-green-300{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-xl font-bold text-red-400 tracking-widest">IoT Devices</h1>
+            {% if current_user.role == 'admin' %}
+            <a href="/devices/add"
+               class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded transition-colors shadow shadow-red-900/40">
+                + Register Device
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Stats -->
+        {% set active_devices   = devices | selectattr('status','equalto','active')   | list %}
+        {% set inactive_devices = devices | selectattr('status','equalto','inactive') | list %}
+        {% set unassigned       = devices | selectattr('patient_id','none')           | list %}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div class="bg-gray-900 border border-red-800 rounded-lg px-4 py-3 text-center">
+                <div class="text-2xl font-bold text-red-400">{{ devices|length }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Total</div>
+            </div>
+            <div class="bg-gray-900 border border-red-800 rounded-lg px-4 py-3 text-center">
+                <div class="text-2xl font-bold text-emerald-400">{{ active_devices|length }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Active</div>
+            </div>
+            <div class="bg-gray-900 border border-red-800 rounded-lg px-4 py-3 text-center">
+                <div class="text-2xl font-bold text-gray-400">{{ inactive_devices|length }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Inactive</div>
+            </div>
+            <div class="bg-gray-900 border border-red-800 rounded-lg px-4 py-3 text-center">
+                <div class="text-2xl font-bold text-amber-400">{{ unassigned|length }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Unassigned</div>
+            </div>
+        </div>
+
+        <!-- Device cards -->
+        {% if devices %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for device in devices %}
+            <div class="bg-gray-900 border border-red-800 rounded-lg overflow-hidden shadow-md shadow-red-950/30
+                        hover:border-red-600 hover:shadow-red-800/40 transition-all">
+
+                <!-- Card header -->
+                <div class="bg-red-900/40 px-4 py-3 flex items-center justify-between border-b border-red-800">
+                    <div class="flex items-center gap-2">
+                        <!-- Device icon -->
+                        <div class="w-8 h-8 rounded-full bg-red-700/60 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-red-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-white truncate max-w-[140px]">{{ device.device_name }}</p>
+                            <p class="text-xs text-gray-400 normal-case">{{ device.device_id }}</p>
+                        </div>
+                    </div>
+                    <!-- Status badge -->
+                    {% if device.status == 'active' %}
+                        <span class="flex-shrink-0 inline-flex items-center gap-1 bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded-full text-xs">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Active
+                        </span>
+                    {% elif device.status == 'inactive' %}
+                        <span class="flex-shrink-0 inline-block bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full text-xs">Inactive</span>
+                    {% else %}
+                        <span class="flex-shrink-0 inline-block bg-amber-900/60 text-amber-300 px-2 py-0.5 rounded-full text-xs">{{ device.status }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- Card body -->
+                <div class="px-4 py-4 space-y-2 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Type</span>
+                        <span class="text-gray-200 normal-case">{{ device.device_type }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Patient</span>
+                        {% if device.patient_id %}
+                            <a href="/patients/{{ device.patient_id }}"
+                               class="text-red-400 hover:text-red-300 transition-colors normal-case truncate max-w-[140px]">
+                                {{ device.patient_name }}
+                            </a>
+                        {% else %}
+                            <span class="text-gray-600">— Unassigned —</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Last Seen</span>
+                        <span class="text-gray-400 normal-case">
+                            {{ device.last_seen if device.last_seen else '—' }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Card footer -->
+                <div class="px-4 pb-4">
+                    <a href="/devices/{{ device.device_id }}"
+                       class="block w-full text-center bg-red-700 hover:bg-red-600 text-white font-bold text-xs py-2 rounded transition-colors">
+                        View Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="bg-gray-900 border border-red-900/50 rounded-lg px-6 py-16 text-center">
+            <svg class="w-12 h-12 text-gray-700 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+            </svg>
+            <p class="text-gray-500 text-sm normal-case">No IoT devices registered yet.</p>
+            {% if current_user.role == 'admin' %}
+            <a href="/devices/add"
+               class="inline-block mt-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-5 py-2 rounded transition-colors">
+                Register First Device
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.getElementById('mob-btn').addEventListener('click', () => {
+            const m = document.getElementById('mob-menu');
+            m.classList.toggle('hidden');
+            m.classList.toggle('flex');
+        });
+    </script>
+</body>
+</html>

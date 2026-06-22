@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ patient.name }} — Devices — Clinical Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { font-family: 'Courier New', Courier, monospace; }</style>
+</head>
+<body class="min-h-screen bg-[#111827] text-white" style="text-transform:uppercase;letter-spacing:.03em">
+
+{% set active = 'patients' %}
+{% include '_nav.html' %}
+
+<div class="max-w-7xl mx-auto px-4 py-6">
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+            <div class="mb-4 px-4 py-3 rounded border text-xs normal-case
+                {% if cat=='error' %}bg-red-900/40 border-red-700 text-red-300
+                {% elif cat=='warning' %}bg-yellow-900/40 border-yellow-700 text-yellow-300
+                {% else %}bg-green-900/40 border-green-700 text-green-300{% endif %}">{{ msg }}</div>
+        {% endfor %}{% endif %}
+    {% endwith %}
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <a href="/patients" class="text-gray-500 hover:text-gray-300 text-xs transition-colors">Patients</a>
+            <span class="text-gray-700">/</span>
+            <a href="/patients/{{ patient.id }}" class="text-red-400 hover:text-red-300 text-xs transition-colors">{{ patient.name }}</a>
+            <span class="text-gray-700">/</span>
+            <h1 class="text-xl font-bold text-red-400 tracking-widest">Devices</h1>
+        </div>
+        {% if current_user.role == 'admin' %}
+        <a href="/devices/add"
+           class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded transition-colors shadow shadow-red-900/40">
+            + Register Device
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        <!-- Patient sidebar -->
+        <div class="lg:col-span-1">
+            <div class="bg-gray-900 border border-red-800 rounded-lg overflow-hidden">
+                <div class="bg-red-900/40 px-4 py-3 border-b border-red-800">
+                    <h2 class="text-xs font-bold text-white tracking-widest">Patient Info</h2>
+                </div>
+                <div class="px-4 py-4 text-xs space-y-3">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full bg-red-700/60 flex items-center justify-center text-white font-bold flex-shrink-0">
+                            {{ patient.name[0]|upper }}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-white">{{ patient.name }}</p>
+                            <p class="text-xs text-gray-400 normal-case">
+                                {{ patient.age }} yrs ·
+                                <span class="{% if patient.gender=='Male' %}text-cyan-400{% else %}text-pink-400{% endif %}">
+                                    {{ patient.gender }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    {% if patient.medical_history %}
+                    <div>
+                        <p class="text-gray-500 mb-1">Medical History</p>
+                        <p class="text-gray-400 normal-case leading-relaxed">{{ patient.medical_history }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="pt-2">
+                        <a href="/patients/{{ patient.id }}"
+                           class="block w-full text-center bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded transition-colors">
+                            View Patient Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Devices section -->
+        <div class="lg:col-span-3">
+            {% if devices %}
+            <div class="bg-gray-900 border border-red-800 rounded-lg overflow-hidden">
+                <div class="bg-red-900/40 px-4 py-3 border-b border-red-800 flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-white tracking-widest">Assigned Devices</h2>
+                    <span class="text-xs text-gray-500">{{ devices|length }} device{{ 's' if devices|length != 1 }}</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="border-b border-red-900/30 text-gray-500">
+                                <th class="px-4 py-3 text-left font-semibold">Device ID</th>
+                                <th class="px-4 py-3 text-left font-semibold">Name</th>
+                                <th class="px-4 py-3 text-left font-semibold">Type</th>
+                                <th class="px-4 py-3 text-left font-semibold">Status</th>
+                                <th class="px-4 py-3 text-left font-semibold">Last Seen</th>
+                                <th class="px-4 py-3 text-left font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for device in devices %}
+                            <tr class="border-b border-red-900/20 hover:bg-red-900/10 transition-colors">
+                                <td class="px-4 py-3 text-gray-500 normal-case font-mono">{{ device.device_id }}</td>
+                                <td class="px-4 py-3 text-white">{{ device.device_name }}</td>
+                                <td class="px-4 py-3 text-gray-400 normal-case">{{ device.device_type }}</td>
+                                <td class="px-4 py-3">
+                                    {% if device.status == 'active' %}
+                                    <span class="inline-flex items-center gap-1 bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded-full">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Active
+                                    </span>
+                                    {% elif device.status == 'inactive' %}
+                                    <span class="bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">Inactive</span>
+                                    {% else %}
+                                    <span class="bg-amber-900/60 text-amber-300 px-2 py-0.5 rounded-full">{{ device.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 text-gray-500 normal-case">
+                                    {{ device.last_seen if device.last_seen else '—' }}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <a href="/devices/{{ device.device_id }}"
+                                       class="bg-red-700 hover:bg-red-600 text-white font-bold text-xs px-3 py-1.5 rounded transition-colors">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="bg-gray-900 border border-red-900/30 rounded-lg px-6 py-16 text-center">
+                <svg class="w-12 h-12 text-gray-700 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+                </svg>
+                <p class="text-gray-500 text-sm normal-case mb-4">No devices assigned to this patient.</p>
+                {% if current_user.role == 'admin' %}
+                <a href="/devices/add"
+                   class="inline-block bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-5 py-2 rounded transition-colors">
+                    Register a Device
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</body>
+</html>
